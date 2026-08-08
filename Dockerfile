@@ -23,6 +23,5 @@ ENV NODE_ENV=production
 EXPOSE 3000
 
 # Mount target for future SQLite persistence (free tier disk is ephemeral).
-VOLUME /app/backend/data
 
 CMD ["node", "backend/server.js"]
