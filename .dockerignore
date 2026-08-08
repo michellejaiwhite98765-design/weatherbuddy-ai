@@ -1,0 +1,15 @@
+# Dependencies
+**/node_modules/
+
+# Build output (frontend build lands in backend/public)
+backend/public/
+
+# SQLite data (never ship the DB; created at runtime)
+backend/data/*.db
+backend/data/*.db-*
+backend/data/*.sqlite*
+
+# Env / secrets
+**/.env
+**/.env.*
+!.env.example

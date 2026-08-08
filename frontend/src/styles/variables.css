@@ -1,0 +1,98 @@
+:root {
+  /* Brand palette (Pinterest-inspired deep-purple glass theme) */
+  --deep-purple: #2d1b4e;
+  --purple: #7c3aed;
+  --violet: #9d5cff;
+  --magenta: #b96bff;
+  --white: #ffffff;
+
+  /* Purple-toned aliases (kept for continuity with existing component code) */
+  --sky-blue: var(--violet);
+  --deep-blue: var(--magenta);
+
+  /* Extended dark-mode surface system */
+  --bg-0: #1a0b2e;
+  --bg-1: #241240;
+  --bg-2: #2d1b4e;
+  --surface-glass: rgba(255, 255, 255, 0.08);
+  --surface-glass-strong: rgba(255, 255, 255, 0.12);
+  --border-glass: rgba(255, 255, 255, 0.15);
+
+  --text-primary: #f8fafc;
+  --text-secondary: rgba(248, 250, 252, 0.68);
+  --text-tertiary: rgba(248, 250, 252, 0.44);
+
+  --gradient-hero: linear-gradient(160deg, #1a0b2e 0%, #2d1b4e 45%, #6d28d9 90%, #9d5cff 100%);
+  --gradient-accent: linear-gradient(120deg, var(--violet), var(--purple) 55%, var(--magenta));
+  --gradient-premium: linear-gradient(120deg, var(--magenta), var(--purple) 50%, var(--violet));
+
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 24px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 12px 34px rgba(20, 8, 40, 0.55);
+  --shadow-glow-blue: 0 0 40px rgba(157, 92, 255, 0.28);
+  --shadow-glow-purple: 0 0 40px rgba(157, 92, 255, 0.32);
+
+  --font-display: "Space Grotesk", "Inter", sans-serif;
+  --font-body: "Inter", sans-serif;
+
+  --nav-height: 78px;
+}
+
+/* Weather-reactive accent tints — driven by the current condition via
+   body[data-weather=...] (set on the Home screen). Keeps the UI feeling alive. */
+body[data-weather="rain"] {
+  --violet: #818cf8;
+  --purple: #6366f1;
+  --magenta: #a78bfa;
+}
+body[data-weather="snow"] {
+  --violet: #c4b5fd;
+  --purple: #a78bfa;
+  --magenta: #d8b4fe;
+}
+body[data-weather="night"] {
+  --violet: #a78bfa;
+  --purple: #7c3aed;
+  --magenta: #c084fc;
+}
+body[data-weather="sunny"] {
+  --violet: #fbbf24;
+  --purple: #f59e0b;
+  --magenta: #fb923c;
+}
+body[data-weather="clouds"] {
+  --violet: #b0a8cc;
+  --purple: #9a8fc0;
+  --magenta: #8b7fb8;
+}
+
+/* Light theme — applied when <body class="light"> is set (see Profile theme toggle). */
+body.light {
+  --bg-0: #eef2f8;
+  --bg-1: #f7f9fc;
+  --bg-2: #eef2f8;
+  --surface-glass: rgba(255, 255, 255, 0.72);
+  --surface-glass-strong: rgba(255, 255, 255, 0.9);
+  --border-glass: rgba(15, 23, 42, 0.12);
+
+  --text-primary: #0f172a;
+  --text-secondary: rgba(15, 23, 42, 0.68);
+  --text-tertiary: rgba(15, 23, 42, 0.48);
+
+  --shadow-soft: 0 8px 30px rgba(15, 23, 42, 0.12);
+}
+
+body.light .bottom-nav {
+  background: rgba(247, 249, 252, 0.8);
+}
+
+body.light .nav-item.active {
+  color: #fff;
+}
+
+body.light .gradient-btn {
+  color: #fff;
+}
