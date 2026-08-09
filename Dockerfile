@@ -1,8 +1,8 @@
-FROM node:22-slim
+FROM node:22-bookworm
 
 WORKDIR /app
 
-# Native build dependencies required by better-sqlite3
+# Native build dependencies required by better-sqlite3 (node-gyp needs Python + toolchain)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
