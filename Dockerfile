@@ -1,27 +1,31 @@
-# node:20-slim (Debian/glibc) so better-sqlite3 uses a prebuilt binary instead of
-# compiling from source on alpine/musl.
-FROM node:20-slim
+FROM node:22-slim
 
 WORKDIR /app
 
-# --- backend deps first (best layer caching) ---
+# Native build dependencies required by better-sqlite3
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Backend dependencies
 COPY backend/package.json backend/package-lock.json backend/
 RUN npm ci --prefix backend --omit=dev
 
-# --- frontend deps (dev deps needed for the Vite build) ---
+# Frontend dependencies
 COPY frontend/package.json frontend/package-lock.json frontend/
 RUN npm ci --prefix frontend
 
-# --- sources ---
+# Source code
 COPY backend backend/
 COPY frontend frontend/
 
-# Build the frontend INTO backend/public so the Express server can serve it.
+# Build frontend
 RUN npm --prefix frontend run build
 
 ENV NODE_ENV=production
-EXPOSE 3000
 
-# Mount target for future SQLite persistence (free tier disk is ephemeral).
+EXPOSE 3000
 
 CMD ["node", "backend/server.js"]
