@@ -1,9 +1,19 @@
 import Database from "better-sqlite3";
 import path from "node:path";
+import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.join(__dirname, "weatherbuddy.db");
+
+// In production the SQLite file lives in a dedicated data dir (`/data` by
+// default) so it can sit on a Railway persistent Volume. The DB is kept OUT of
+// backend/data because that folder also holds this module's source (db.js,
+// mock.js) — a volume mounted there would shadow them and break the app.
+// Dev keeps the DB in backend/data as before. Override with DB_DIR.
+const dbDir =
+  process.env.DB_DIR || (process.env.NODE_ENV === "production" ? "/data" : __dirname);
+fs.mkdirSync(dbDir, { recursive: true });
+const dbPath = path.join(dbDir, "weatherbuddy.db");
 
 const db = new Database(dbPath);
 db.pragma("journal_mode = WAL");
