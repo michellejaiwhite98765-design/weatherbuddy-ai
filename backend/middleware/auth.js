@@ -13,13 +13,13 @@ export function verifyToken(token) {
 
 // Attaches req.user for authenticated requests; anonymous requests stay anonymous
 // (treated as free plan) rather than being rejected outright.
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (token) {
     try {
       const payload = verifyToken(token);
-      const user = getUserById(payload.id);
+      const user = await getUserById(payload.id);
       if (user) req.user = user;
     } catch {
       // invalid/expired token -> treat as anonymous
@@ -28,13 +28,13 @@ export function optionalAuth(req, res, next) {
   next();
 }
 
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const header = req.headers.authorization || "";
   const token = header.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) return res.status(401).json({ error: "Authentication required" });
   try {
     const payload = verifyToken(token);
-    const user = getUserById(payload.id);
+    const user = await getUserById(payload.id);
     if (!user) return res.status(401).json({ error: "User no longer exists" });
     req.user = user;
     next();

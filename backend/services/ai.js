@@ -328,7 +328,7 @@ function weatherForPrompt({ current, daily, rainAlert }) {
 
 // Persist one chat turn to the DB and return the stored log.
 export async function logChatTurn(userId, { message, reply, engine }) {
-  const id = recordActivity(userId, {
+  const id = await recordActivity(userId, {
     type: "chat",
     message,
     reply,

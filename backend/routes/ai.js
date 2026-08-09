@@ -18,7 +18,13 @@ function isPremium(plan) {
 
 // GET /api/ai/forecast — premium AI forecast for a city (rules always, LLM when keyed).
 router.get("/forecast", optionalAuth, async (req, res) => {
-  const plan = getPlan(req.user?.id);
+  let plan;
+  try {
+    plan = await getPlan(req.user?.id);
+  } catch (err) {
+    console.error("AI forecast db error:", err.message);
+    return res.status(500).json({ error: "Could not check your plan." });
+  }
   if (!isPremium(plan)) {
     return res.status(403).json({ error: "AI forecast is a Premium feature." });
   }
@@ -47,7 +53,13 @@ router.get("/forecast", optionalAuth, async (req, res) => {
 
 // POST /api/ai/chat — conversational AI. Logs every turn for the user.
 router.post("/chat", requireAuth, async (req, res) => {
-  const plan = getPlan(req.user.id);
+  let plan;
+  try {
+    plan = await getPlan(req.user.id);
+  } catch (err) {
+    console.error("AI chat db error:", err.message);
+    return res.status(500).json({ error: "Could not check your plan." });
+  }
   if (!isPremium(plan)) {
     return res.status(403).json({ error: "AI chat is a Premium feature." });
   }
@@ -67,7 +79,7 @@ router.post("/chat", requireAuth, async (req, res) => {
     }
 
     const { text, engine } = await aiChat(message, weather);
-    logChatTurn(req.user.id, { type: "chat", message, reply: text, engine });
+    await logChatTurn(req.user.id, { type: "chat", message, reply: text, engine });
     res.json({ reply: text, engine });
   } catch (err) {
     console.error("AI chat error:", err.message);
@@ -76,8 +88,13 @@ router.post("/chat", requireAuth, async (req, res) => {
 });
 
 // GET /api/ai/activity — the user's own AI usage history.
-router.get("/activity", requireAuth, (req, res) => {
-  res.json({ activities: getActivities(req.user.id) });
+router.get("/activity", requireAuth, async (req, res) => {
+  try {
+    res.json({ activities: await getActivities(req.user.id) });
+  } catch (err) {
+    console.error("AI activity db error:", err.message);
+    res.status(500).json({ error: "Could not load activity." });
+  }
 });
 
 export default router;

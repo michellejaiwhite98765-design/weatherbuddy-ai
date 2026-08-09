@@ -71,7 +71,7 @@ function parseLocation(req) {
 router.get("/home", optionalAuth, async (req, res) => {
   try {
     const { city, lat, lon } = parseLocation(req);
-    const plan = getPlan(req.user?.id);
+    const plan = await getPlan(req.user?.id);
     const premium = isPremium(plan);
     const data = await getWeatherForCity(city || "Nagercoil", { lat, lon });
     const rainAlert = buildRainAlert(data.hourly);
@@ -116,7 +116,13 @@ router.get("/current", optionalAuth, async (req, res) => {
 // GET /api/weather/history — recent snapshots for a city (premium). Used for the
 // temperature sparkline. Returns chronological [{ temp, condition, recorded_at }].
 router.get("/history", optionalAuth, async (req, res) => {
-  const plan = getPlan(req.user?.id);
+  let plan;
+  try {
+    plan = await getPlan(req.user?.id);
+  } catch (err) {
+    console.error("history db error:", err.message);
+    return res.status(500).json({ error: "Could not load history." });
+  }
   if (!isPremium(plan)) {
     return res.status(403).json({ error: "Weather history is a Premium feature." });
   }
@@ -126,7 +132,13 @@ router.get("/history", optionalAuth, async (req, res) => {
   // If we haven't persisted snapshots for this city yet, fetch a forecast to seed
   // the history (getWeatherForCity records a throttled snapshot on its own), so
   // the chart is never empty on first load.
-  const rows = getWeatherHistory(name, limit);
+  let rows;
+  try {
+    rows = await getWeatherHistory(name, limit);
+  } catch (err) {
+    console.error("history db error:", err.message);
+    return res.status(500).json({ error: "Could not load history." });
+  }
   if (rows.length === 0) {
     try {
       await getWeatherForCity(name, { lat, lon });
@@ -134,7 +146,14 @@ router.get("/history", optionalAuth, async (req, res) => {
       // ignore — return whatever we have
     }
   }
-  res.json({ city: name, history: getWeatherHistory(name, limit) });
+  let history;
+  try {
+    history = await getWeatherHistory(name, limit);
+  } catch (err) {
+    console.error("history db error:", err.message);
+    return res.status(500).json({ error: "Could not load history." });
+  }
+  res.json({ city: name, history });
 });
 
 // GET /api/weather/search — real geocoding search.
@@ -150,7 +169,13 @@ router.get("/search", async (req, res) => {
 
 // GET /api/weather/radar — live radar frames (RainViewer, no key). Premium only.
 router.get("/radar", optionalAuth, async (req, res) => {
-  const plan = getPlan(req.user?.id);
+  let plan;
+  try {
+    plan = await getPlan(req.user?.id);
+  } catch (err) {
+    console.error("radar db error:", err.message);
+    return res.status(500).json({ error: "Could not check your plan." });
+  }
   if (!isPremium(plan)) {
     return res.status(403).json({ error: "Live radar is a Premium feature." });
   }
@@ -174,7 +199,7 @@ router.get("/radar", optionalAuth, async (req, res) => {
 // GET /api/weather/favorites — the logged-in user's saved cities (with live temp).
 router.get("/favorites", optionalAuth, async (req, res) => {
   if (!req.user) return res.json([]);
-  const favorites = getFavorites(req.user.id);
+  const favorites = await getFavorites(req.user.id);
   const enriched = await Promise.all(
     favorites.map(async (f) => {
       try {
@@ -192,37 +217,37 @@ router.get("/favorites", optionalAuth, async (req, res) => {
 router.post("/favorites", requireAuth, async (req, res) => {
   const { city, country, lat, lon } = req.body || {};
   if (!city) return res.status(400).json({ error: "city is required" });
-  addFavorite(req.user.id, { city, country, lat, lon });
-  res.json({ ok: true, favorites: getFavorites(req.user.id) });
+  await addFavorite(req.user.id, { city, country, lat, lon });
+  res.json({ ok: true, favorites: await getFavorites(req.user.id) });
 });
 
 // DELETE /api/weather/favorites/:city — remove a saved city.
-router.delete("/favorites/:city", requireAuth, (req, res) => {
-  removeFavorite(req.user.id, req.params.city);
-  res.json({ ok: true, favorites: getFavorites(req.user.id) });
+router.delete("/favorites/:city", requireAuth, async (req, res) => {
+  await removeFavorite(req.user.id, req.params.city);
+  res.json({ ok: true, favorites: await getFavorites(req.user.id) });
 });
 
 // GET /api/weather/notifications — per-user, seeded from live conditions.
 router.get("/notifications", optionalAuth, async (req, res) => {
   if (!req.user) return res.json([]);
-  const existing = getNotifications(req.user.id);
+  const existing = await getNotifications(req.user.id);
   if (existing.length === 0) {
     try {
       const data = await getWeatherForCity("Nagercoil");
       const rainAlert = buildRainAlert(data.hourly);
       const t = (m) => `${m} min ago`;
       if (rainAlert.active) {
-        addNotification(req.user.id, { type: "rain", title: "Rain Alert", message: `Rain expected in ~${Math.round(rainAlert.etaMinutes / 60)}h near Nagercoil.`, time: t(2) });
+        await addNotification(req.user.id, { type: "rain", title: "Rain Alert", message: `Rain expected in ~${Math.round(rainAlert.etaMinutes / 60)}h near Nagercoil.`, time: t(2) });
       }
       if (data.current.temp >= 30) {
-        addNotification(req.user.id, { type: "heat", title: "Heat Advisory", message: `Temperatures may reach ${data.daily[0].high}°C this afternoon.`, time: t(60) });
+        await addNotification(req.user.id, { type: "heat", title: "Heat Advisory", message: `Temperatures may reach ${data.daily[0].high}°C this afternoon.`, time: t(60) });
       }
-      addNotification(req.user.id, { type: "news", title: "Weather News", message: "Your personalized forecast is ready.", time: t(15) });
+      await addNotification(req.user.id, { type: "news", title: "Weather News", message: "Your personalized forecast is ready.", time: t(15) });
     } catch {
       // ignore seed failures
     }
   }
-  res.json(getNotifications(req.user.id));
+  res.json(await getNotifications(req.user.id));
 });
 
 // GET /api/weather/plans

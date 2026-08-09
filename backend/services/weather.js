@@ -162,13 +162,13 @@ const CACHE_TTL = 60_000; // 60s — supports live polling without hammering the
 const LAST_SNAPSHOT = new Map();
 const SNAPSHOT_TTL = 10 * 60_000;
 
-function persistSnapshot(city, country, lat, lon, curr) {
+async function persistSnapshot(city, country, lat, lon, curr) {
   const key = city || `${lat},${lon}`;
   const last = LAST_SNAPSHOT.get(key);
   if (last && Date.now() - last < SNAPSHOT_TTL) return;
   LAST_SNAPSHOT.set(key, Date.now());
   try {
-    recordWeatherSnapshot({
+    await recordWeatherSnapshot({
       city,
       country,
       lat,
@@ -216,7 +216,7 @@ export async function getWeatherForCity(query, { lat, lon } = {}) {
   _cache.set(key, { at: Date.now(), data });
 
   // Persist a history snapshot (throttled) alongside the forecast.
-  persistSnapshot(data.location.name, data.location.country, data.location.lat, data.location.lon, data.current);
+  await persistSnapshot(data.location.name, data.location.country, data.location.lat, data.location.lon, data.current);
 
   return data;
 }

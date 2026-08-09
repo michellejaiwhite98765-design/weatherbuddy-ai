@@ -21,9 +21,14 @@ const PLAN_PRICES = {
 };
 
 // GET /api/billing/plan — current plan for the logged-in user (or anonymous free).
-router.get("/plan", optionalAuth, (req, res) => {
-  const plan = getPlan(req.user?.id);
-  res.json({ plan, premium: isPremium(plan) });
+router.get("/plan", optionalAuth, async (req, res) => {
+  try {
+    const plan = await getPlan(req.user?.id);
+    res.json({ plan, premium: isPremium(plan) });
+  } catch (err) {
+    console.error("billing plan db error:", err.message);
+    res.status(500).json({ error: "Could not load plan." });
+  }
 });
 
 // POST /api/billing/checkout — create a Stripe Checkout session (or dev fallback).
@@ -38,7 +43,7 @@ router.post("/checkout", requireAuth, async (req, res) => {
 
   // --- Dev fallback: no Stripe keys configured ---------------------------
   if (!stripe) {
-    setPlan(req.user.id, planId);
+    await setPlan(req.user.id, planId);
     console.log(`[billing] DEV checkout: user #${req.user.id} -> ${planId}`);
     return res.json({ mode: "dev", plan: planId, message: "Plan activated (dev mode)" });
   }
@@ -100,7 +105,7 @@ router.post("/webhook", async (req, res) => {
     const userId = session.metadata?.userId;
     const planId = session.metadata?.planId;
     if (userId && planId) {
-      setPlan(Number(userId), planId, {
+      await setPlan(Number(userId), planId, {
         stripeCustomerId: session.customer,
         currentPeriodEnd: new Date((session.subscription ? Date.now() / 1000 : 0) * 1000).toISOString(),
       });
